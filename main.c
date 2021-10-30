@@ -1,4 +1,8 @@
 #include <stdio.h>
+#include "os.h"
+#include "os.c"
+
+const int WINDOW_SIZE = 9;
 
 /**introduction:
  * need implement a simulated os  code that handles multi-level (trie-based) page table
@@ -49,7 +53,53 @@
  *
  * */
 
+uint16_t* next_pt(int entry , uint16_t* pte,int last)
+{
+    if((pte[entry] & 1 )== 0)
+        return NO_MAPPING;
+    if (last)
+        return pte[entry];
+
+    return phys_to_virt(pte[entry] - 1);
+}
+
+/**
+ * pt  -   the physical page number of the page table root
+ * vpn -   target virtual page number
+ * ppn -   ppn = NO_MAPPING? => destroy vpn mapping
+ *         else? => ppn = ppn that vpn is mapped to
+ * */
+void page_table_update(uint64_t pt,uint64_t vpn ,uint64_t ppn)
+{
+
+}
+/**
+ *  pt  -   the physical page number of the page table root
+ *  vpn -   target virtual page number
+ *
+ * */
+uint64_t page_table_query(uint64_t pt, uint64_t vpn)
+{
+    int pt_levle = 0,entry;
+    // receive ptn , witch means the page is at pt*2^12
+    uint16_t ppt = pt << 12;
+    uint16_t* page_table_root = phys_to_virt(ppt);
+    // i got the root of the pt , now i need to go over 5 levels of pt to find mapping
+    while(pt_levle = 0<4) {
+        entry = (pt_levle*WINDOW_SIZE) & 0x1ff;
+        pt_levle++;
+        pt_levle = next_pt(entry,pt_levle,0);
+    }
+     pt_levle = next_pt(entry,pt_levle,1)[entry] >> 12;
+    return pt_levle;
+}
+
+
 int main() {
-    printf("Hello, World!\n");
+    uint64_t pt = alloc_page_frame();
+    pt = alloc_page_frame() ;
+    pt = alloc_page_frame() ;
+
+    printf(page_table_query(pt,0xcafe));
     return 0;
 }
