@@ -37,7 +37,15 @@
  * 45\9 = 5 => 5 levels of pt
  * */
 
-/*
+/* OS physical memory manager: using os.c
+ *  1) obtain page num of unused pp :
+ *              allocate a physical page (page frame):
+ *                  unint64_t alloc_page_frame(void)
+ *                          returns physical page number
+ *                          contains all zeros
+ *  2) obtain the kernal virtual address
+ *              void* phys_to_virt(unint64_t phys_addr)
+ *                      returns a ptr to the virtual page
  *
  * */
 
