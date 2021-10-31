@@ -4,6 +4,12 @@
 
 const int WINDOW_SIZE = 9;
 
+void no_mapping(uint64_t pt, uint64_t vpn);
+
+uint64_t virtual_loc(int i, uint64_t vpn) {
+    return 36 - i * WINDOW_SIZE;
+}
+
 /**introduction:
  * need implement a simulated os  code that handles multi-level (trie-based) page table
  * implement 2 funcs :
@@ -53,15 +59,6 @@ const int WINDOW_SIZE = 9;
  *
  * */
 
-uint16_t* next_pt(int entry , uint16_t* pte,int last)
-{
-    if((pte[entry] & 1 )== 0)
-        return NO_MAPPING;
-    if (last)
-        return pte[entry];
-
-    return phys_to_virt(pte[entry] - 1);
-}
 
 /**
  * pt  -   the physical page number of the page table root
@@ -69,37 +66,60 @@ uint16_t* next_pt(int entry , uint16_t* pte,int last)
  * ppn -   ppn = NO_MAPPING? => destroy vpn mapping
  *         else? => ppn = ppn that vpn is mapped to
  * */
-void page_table_update(uint64_t pt,uint64_t vpn ,uint64_t ppn)
-{
+void page_table_update(uint64_t pt, uint64_t vpn, uint64_t ppn) {
+    uint64_t *next_pt_va, loc;
+    pt = pt << 12;
+    for (int i = 0; i < 4; i++) {//advance until last pt and allocate pt if needed
+        loc = virtual_loc(i, vpn);
+        next_pt_va = phys_to_virt(pt - 1);
+        pt = next_pt_va[(vpn >> loc) * 0x1ff];
+        if (!(pt & 1))//if not mapped
+        {
+            if (ppn == NO_MAPPING)//if not mapped and we like it that way
+                return;
+        } else {
+            pt = alloc_page_frame() << 12;//map it
+            pt = pt + 1;//add valid bit
+        }
+    }//last pt level
+    next_pt_va = phys_to_virt(pt - 1);
+    pt = next_pt_va[vpn * 0x1ff];
+    if (ppn == NO_MAPPING) {
+        pt = 0;
+        return;
+    } else {
+        pt = pt << 12;
+        pt = pt + 1;
+        return;
+    }
 
 }
+
+void no_mapping(uint64_t pt, uint64_t vpn) {
+
+
+}
+
 /**
  *  pt  -   the physical page number of the page table root
  *  vpn -   target virtual page number
  *
  * */
-uint64_t page_table_query(uint64_t pt, uint64_t vpn)
-{
-    int pt_levle = 0,entry;
-    // receive ptn , witch means the page is at pt*2^12
-    uint16_t ppt = pt << 12;
-    uint16_t* page_table_root = phys_to_virt(ppt);
-    // i got the root of the pt , now i need to go over 5 levels of pt to find mapping
-    while(pt_levle = 0<4) {
-        entry = (pt_levle*WINDOW_SIZE) & 0x1ff;
-        pt_levle++;
-        pt_levle = next_pt(entry,pt_levle,0);
+uint64_t page_table_query(uint64_t pt, uint64_t vpn) {
+    uint64_t *next_pt_va, loc;
+    pt = pt << 12;
+    for (int i = 0; i < 5; i++) {
+        loc = virtual_loc(i, vpn);
+        next_pt_va = phys_to_virt(pt - 1);
+        pt = next_pt_va[(vpn >> loc) * 0x1ff];
+
+        if ((!(pt & 1)) && (i < 4)) {
+            return NO_MAPPING;
+        }
     }
-     pt_levle = next_pt(entry,pt_levle,1)[entry] >> 12;
-    return pt_levle;
+    return pt >> 12;
+
+
 }
 
 
-int main() {
-    uint64_t pt = alloc_page_frame();
-    pt = alloc_page_frame() ;
-    pt = alloc_page_frame() ;
-
-    printf(page_table_query(pt,0xcafe));
-    return 0;
-}

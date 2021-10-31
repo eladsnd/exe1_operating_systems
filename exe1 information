@@ -38,3 +38,17 @@
 
 /*
  * */
+
+     int pt_levle = 0,entry;
+     // receive ptn , witch means the page is at pt*2^12
+     uint16_t ppt = pt << 12;
+     uint16_t* page_table_root = phys_to_virt(ppt);
+     // i got the root of the pt , now i need to go over 5 levels of pt to find mapping
+     while(pt_levle < 4)
+     {
+         entry = (pt_levle*WINDOW_SIZE) & 0x1ff;
+         pt_levle++;
+         page_table_root = next_pt(entry, page_table_root, 0);
+     }
+     page_table_root = next_pt(entry,page_table_root,1);
+     return page_table_root[entry] >> 12;
